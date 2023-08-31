@@ -1,0 +1,5 @@
+filename;size;dominating_set;runtime;mipgap;optimal
+c.txt;3;[1, 2, 3];0.00033593177795410156;0.0;True
+d.txt;4;[0, 1, 2, 3];0.00010991096496582031;0.0;True
+b.txt;3;[1, 2, 3];9.703636169433594e-05;0.0;True
+a.txt;3;[1, 2, 3];9.512901306152344e-05;0.0;True
