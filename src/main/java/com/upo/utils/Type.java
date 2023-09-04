@@ -1,4 +1,4 @@
-package com.upo;
+package com.upo.utils;
 
 public enum Type {
     SINK, SOURCE;

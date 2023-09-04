@@ -3,9 +3,11 @@ package com.upo;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import com.upo.utils.MatrixReader;
+import com.upo.utils.Type;
 
 public class Graph {
 
@@ -61,7 +63,6 @@ public class Graph {
                 }
             }
         }
-
     }
 
     public Set<Integer> getVertices() {
@@ -78,6 +79,23 @@ public class Graph {
 
     public Set<Integer> getMandatoryVertices() {
         return mandatoryVertices;
+    }
+
+    public Integer getNextBestVertex(Set<Integer> vertexSet) {
+        Random random = new Random();
+        
+        List<Integer> ranking = new ArrayList<>(vertices);
+        ranking.removeAll(vertexSet);
+        ranking.sort((v1, v2) -> {
+            if (edges.get(v1).get(1).size() > edges.get(v2).get(1).size()) {
+                return -1;
+            } else if (edges.get(v1).get(1).size() < edges.get(v2).get(1).size()) {
+                return 1;
+            } else {
+                return random.nextBoolean() ? -1 : 1;
+            }
+        });
+        return ranking.get(0);
     }
 
     public Set<Integer> dominates(Set<Integer> dominatingSet) {
@@ -101,18 +119,35 @@ public class Graph {
         return dominatedVertices.containsAll(vertices);
     }
 
-    public static void main(String[] args) {
-        Graph graph = new Graph("test/b.txt", Type.SOURCE);
+    // check the time complexity of this method
+    public Set<Integer> removeRedundantVertices(Set<Integer> dominatingSet) {
+        List<Integer> checkingSet = new ArrayList<>(dominatingSet);
+        for (int i = 0; i < checkingSet.size(); i++) {
+            Set<Integer> newDominatingSet = new HashSet<>(dominatingSet);
+            newDominatingSet.remove(checkingSet.get(i));
+            if (isDominatingSet(newDominatingSet)) {
+                dominatingSet.remove(checkingSet.get(i));
+            }
+        }
+        return dominatingSet;
+    }
 
-        System.out.println(graph.getVertices());
-        System.out.println(graph.getEdges());
+    public static void main(String[] args) {
+        Graph graph = new Graph("random/rnd_20_20_1.txt", Type.SINK);
+
         System.out.println(graph.getMandatoryVertices());
 
         Set<Integer> dominatingSet = new HashSet<>();
-        dominatingSet.add(0);
-        dominatingSet.add(3);
+        //1, 4, 10, 12, 19
+        dominatingSet.add(1);
+        dominatingSet.add(4);
+        dominatingSet.add(10);
+        dominatingSet.add(12);
+        dominatingSet.add(19);
 
         System.out.println(graph.dominates(dominatingSet));
         System.out.println(graph.isDominatingSet(dominatingSet));
+        System.out.println(graph.getNextBestVertex(dominatingSet));
+        System.out.println(graph.removeRedundantVertices(dominatingSet));
     }
 }
