@@ -1,9 +1,9 @@
 package com.upo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import com.upo.utils.MatrixReader;
@@ -14,11 +14,13 @@ public class Graph {
     private Set<Integer> vertices = new HashSet<>();
     private List<List<Set<Integer>>> edges = new ArrayList<>();
     private Set<Integer> mandatoryVertices = new HashSet<>();
+    private HashMap<Integer, Set<Integer>> vertexRanking = new HashMap<>();
     private Type type;
 
     public Graph(String filename, Type type) {
         List<Integer>[] adjacencyList = MatrixReader.matrixToList(MatrixReader.readGraph(filename));
 
+        this.type = type;
         for (int i = 0; i < adjacencyList.length; i++) {
             vertices.add(i);
             edges.add(new ArrayList<>());
@@ -40,26 +42,33 @@ public class Graph {
 
             edges.get(i).add(incomingEdges);
             edges.get(i).add(outgoingEdges);
-        }
 
-        for (int i = 0; i < edges.size(); i++) {
-            if (edges.get(i).get(0).isEmpty() && edges.get(i).get(1).isEmpty()) {
-                mandatoryVertices.add(i);
-            }
-        }
-
-        if (type == Type.SOURCE) {
-            this.type = Type.SOURCE;
-            for (int i = 0; i < edges.size(); i++) {
-                if (edges.get(i).get(0).isEmpty()) {
-                    mandatoryVertices.add(i);
+            if (type == Type.SOURCE) {
+                if (vertexRanking.containsKey(outgoingEdges.size())) {
+                    vertexRanking.get(outgoingEdges.size()).add(i);
+                } else {
+                    Set<Integer> verticesWithSameRanking = new HashSet<>();
+                    verticesWithSameRanking.add(i);
+                    vertexRanking.put(outgoingEdges.size(), verticesWithSameRanking);
                 }
-            }
-        } else if (type == Type.SINK) {
-            this.type = Type.SINK;
-            for (int i = 0; i < edges.size(); i++) {
-                if (edges.get(i).get(1).isEmpty()) {
-                    mandatoryVertices.add(i);
+
+                for (int j = 0; j < edges.size(); j++) {
+                    if (edges.get(j).get(0).isEmpty()) {
+                        mandatoryVertices.add(j);
+                    }
+                }
+            } else if (type == Type.SINK) {
+                if (vertexRanking.containsKey(incomingEdges.size())) {
+                    vertexRanking.get(incomingEdges.size()).add(i);
+                } else {
+                    Set<Integer> verticesWithSameRanking = new HashSet<>();
+                    verticesWithSameRanking.add(i);
+                    vertexRanking.put(incomingEdges.size(), verticesWithSameRanking);
+                }
+                for (int j = 0; j < edges.size(); j++) {
+                    if (edges.get(j).get(1).isEmpty()) {
+                        mandatoryVertices.add(i);
+                    }
                 }
             }
         }
@@ -77,25 +86,46 @@ public class Graph {
         return edges.get(vertex);
     }
 
+    public HashMap<Integer, Set<Integer>> getVertexRanking() {
+        return vertexRanking;
+    }
+
     public Set<Integer> getMandatoryVertices() {
         return mandatoryVertices;
     }
 
-    public Integer getNextBestVertex(Set<Integer> vertexSet) {
-        Random random = new Random();
-        
-        List<Integer> ranking = new ArrayList<>(vertices);
-        ranking.removeAll(vertexSet);
-        ranking.sort((v1, v2) -> {
-            if (edges.get(v1).get(1).size() > edges.get(v2).get(1).size()) {
-                return -1;
-            } else if (edges.get(v1).get(1).size() < edges.get(v2).get(1).size()) {
-                return 1;
-            } else {
-                return random.nextBoolean() ? -1 : 1;
+    public Integer getNextBestVertexFast(Set<Integer> vertexSet) {
+        Integer bestVertex = -1;
+
+        while (bestVertex == -1) {
+            for (int degree : vertexRanking.keySet()) {
+                for (int vertex : vertexRanking.get(degree)) {
+                    if (!vertexSet.contains(vertex)) {
+                        bestVertex = vertex;
+                        break;
+                    }
+                }
             }
-        });
-        return ranking.get(0);
+        }
+        return bestVertex;
+    }
+
+    // en funcion del grado
+    public Integer getNextBestVertexSlow(Set<Integer> vertexSet) {
+        Set<Integer> dominatedVertices = dominates(vertexSet);
+        Integer bestVertex = -1;
+
+        while (bestVertex == -1) {
+            for (int degree : vertexRanking.keySet()) {
+                for (int vertex : vertexRanking.get(degree)) {
+                    if (!dominatedVertices.contains(vertex)) {
+                        bestVertex = vertex;
+                        break;
+                    }
+                }
+            }
+        }
+        return bestVertex;
     }
 
     public Set<Integer> dominates(Set<Integer> dominatingSet) {
@@ -119,7 +149,8 @@ public class Graph {
         return dominatedVertices.containsAll(vertices);
     }
 
-    // check the time complexity of this method
+    // check the time complexity of this method - ve eliminando los vertices que
+    // tengan menor grado a mas
     public Set<Integer> removeRedundantVertices(Set<Integer> dominatingSet) {
         List<Integer> checkingSet = new ArrayList<>(dominatingSet);
         for (int i = 0; i < checkingSet.size(); i++) {
@@ -133,21 +164,15 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_20_20_1.txt", Type.SINK);
-
-        System.out.println(graph.getMandatoryVertices());
+        Graph graph = new Graph("random/rnd_20_20_1.txt", Type.SOURCE);
 
         Set<Integer> dominatingSet = new HashSet<>();
-        //1, 4, 10, 12, 19
+        dominatingSet.add(0);
         dominatingSet.add(1);
+        dominatingSet.add(2);
         dominatingSet.add(4);
-        dominatingSet.add(10);
-        dominatingSet.add(12);
-        dominatingSet.add(19);
+        dominatingSet.add(9);
 
-        System.out.println(graph.dominates(dominatingSet));
-        System.out.println(graph.isDominatingSet(dominatingSet));
-        System.out.println(graph.getNextBestVertex(dominatingSet));
-        System.out.println(graph.removeRedundantVertices(dominatingSet));
+        System.out.println(graph.getNextBestVertexFast(dominatingSet));
     }
 }

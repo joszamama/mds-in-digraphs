@@ -25,22 +25,22 @@ public class FSS {
     }
 
     public long getTime() {
-        return time / 1000000000;
+        return time / 1000;
     }
 
     public void computeInitialSolution() {
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         initialSolution.addAll(graph.getMandatoryVertices());
         while (!graph.isDominatingSet(initialSolution)) {
-            initialSolution.add(graph.getNextBestVertex(initialSolution));
+            initialSolution.add(graph.getNextBestVertexFast(initialSolution));
         }
         initialSolution = graph.removeRedundantVertices(initialSolution);
-        long endTime = System.nanoTime();
+        long endTime = System.currentTimeMillis();
         time = endTime - startTime;
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_20_20_1.txt", Type.SINK);
+        Graph graph = new Graph("random/rnd_5000_20_1.txt", Type.SINK);
 
         FSS fss = new FSS(graph);
         fss.computeInitialSolution();
