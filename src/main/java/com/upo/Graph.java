@@ -1,26 +1,33 @@
 package com.upo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import com.upo.utils.MatrixReader;
-import com.upo.utils.Type;
+import com.upo.utils.enums.Mode;
+import com.upo.utils.enums.Type;
 
 public class Graph {
 
     private Set<Integer> vertices = new HashSet<>();
     private List<List<Set<Integer>>> edges = new ArrayList<>();
     private Set<Integer> mandatoryVertices = new HashSet<>();
-    private HashMap<Integer, Set<Integer>> vertexRanking = new HashMap<>();
+    private HashMap<Integer, List<Integer>> vertexRanking = new HashMap<>();
     private Type type;
+    private Mode mode;
 
-    public Graph(String filename, Type type) {
+    public Graph(String filename, Type type, Mode mode) {
+        this.type = type;
+        this.mode = mode;
+
         List<Integer>[] adjacencyList = MatrixReader.matrixToList(MatrixReader.readGraph(filename));
 
-        this.type = type;
         for (int i = 0; i < adjacencyList.length; i++) {
             vertices.add(i);
             edges.add(new ArrayList<>());
@@ -47,7 +54,7 @@ public class Graph {
                 if (vertexRanking.containsKey(outgoingEdges.size())) {
                     vertexRanking.get(outgoingEdges.size()).add(i);
                 } else {
-                    Set<Integer> verticesWithSameRanking = new HashSet<>();
+                    List<Integer> verticesWithSameRanking = new ArrayList<>();
                     verticesWithSameRanking.add(i);
                     vertexRanking.put(outgoingEdges.size(), verticesWithSameRanking);
                 }
@@ -61,7 +68,7 @@ public class Graph {
                 if (vertexRanking.containsKey(incomingEdges.size())) {
                     vertexRanking.get(incomingEdges.size()).add(i);
                 } else {
-                    Set<Integer> verticesWithSameRanking = new HashSet<>();
+                    List<Integer> verticesWithSameRanking = new ArrayList<>();
                     verticesWithSameRanking.add(i);
                     vertexRanking.put(incomingEdges.size(), verticesWithSameRanking);
                 }
@@ -86,7 +93,7 @@ public class Graph {
         return edges.get(vertex);
     }
 
-    public HashMap<Integer, Set<Integer>> getVertexRanking() {
+    public HashMap<Integer, List<Integer>> getVertexRanking() {
         return vertexRanking;
     }
 
@@ -94,36 +101,129 @@ public class Graph {
         return mandatoryVertices;
     }
 
-    public Integer getNextBestVertexFast(Set<Integer> vertexSet) {
-        Integer bestVertex = -1;
-
-        while (bestVertex == -1) {
-            for (int degree : vertexRanking.keySet()) {
-                for (int vertex : vertexRanking.get(degree)) {
-                    if (!vertexSet.contains(vertex)) {
-                        bestVertex = vertex;
-                        break;
-                    }
-                }
-            }
-        }
-        return bestVertex;
+    public Integer getRandomVertex() {
+        return (int) (Math.random() * vertices.size());
     }
 
-    // en funcion del grado
-    public Integer getNextBestVertexSlow(Set<Integer> vertexSet) {
-        Set<Integer> dominatedVertices = dominates(vertexSet);
+    public Integer getNextVertex(Set<Integer> vertexSet) {
         Integer bestVertex = -1;
+        Mode access = this.mode;
 
-        while (bestVertex == -1) {
-            for (int degree : vertexRanking.keySet()) {
-                for (int vertex : vertexRanking.get(degree)) {
-                    if (!dominatedVertices.contains(vertex)) {
-                        bestVertex = vertex;
-                        break;
+        if (this.mode == Mode.RANDOM) {
+            Random random = new Random();
+            int randomNumber = random.nextInt(4);
+
+            if (randomNumber == 0) {
+                access = Mode.A;
+            }
+            if (randomNumber == 1) {
+                access = Mode.B;
+            }
+            if (randomNumber == 2) {
+                access = Mode.C;
+            }
+            if (randomNumber == 3) {
+                access = Mode.D;
+            }
+
+        }
+        switch (access) {
+            case A:
+                System.out.println("A");
+                while (bestVertex == -1) {
+                    for (int degree : vertexRanking.keySet()) {
+                        List<Integer> verticesWithSameRanking = vertexRanking.get(degree);
+                        Collections.shuffle(verticesWithSameRanking);
+                        for (int vertex : verticesWithSameRanking) {
+                            if (!vertexSet.contains(vertex)) {
+                                bestVertex = vertex;
+                                break;
+                            }
+                        }
                     }
                 }
-            }
+                break;
+            case B:
+                System.out.println("B");
+                Set<Integer> dominatedVertices = dominates(vertexSet);
+                while (bestVertex == -1) {
+                    for (int degree : vertexRanking.keySet()) {
+                        List<Integer> verticesWithSameRanking = vertexRanking.get(degree);
+                        Collections.shuffle(verticesWithSameRanking);
+                        for (int vertex : verticesWithSameRanking) {
+                            if (!dominatedVertices.contains(vertex)) {
+                                bestVertex = vertex;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            case C:
+                System.out.println("C");
+                Map<Integer, List<Integer>> vertexDynamicRanking = new HashMap<>();
+
+                for (int vertex : vertices) {
+                    Set<Integer> dominatedVerticesByVertex = new HashSet<>(Set.of(vertex));
+                    dominatedVerticesByVertex.removeAll(vertexSet);
+                    int numberOfDominatedVertices = dominatedVerticesByVertex.size();
+
+                    if (vertexDynamicRanking.containsKey(numberOfDominatedVertices)) {
+                        vertexDynamicRanking.get(numberOfDominatedVertices).add(vertex);
+                    } else {
+                        List<Integer> verticesWithSameRanking = new ArrayList<>();
+                        verticesWithSameRanking.add(vertex);
+                        vertexDynamicRanking.put(numberOfDominatedVertices, verticesWithSameRanking);
+                    }
+                }
+
+                while (bestVertex == -1) {
+                    for (int degree : vertexDynamicRanking.keySet()) {
+                        List<Integer> verticesWithSameRanking = vertexDynamicRanking.get(degree);
+                        Collections.shuffle(verticesWithSameRanking);
+                        for (int vertex : verticesWithSameRanking) {
+                            if (!vertexSet.contains(vertex)) {
+                                bestVertex = vertex;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            case D:
+                System.out.println("D");
+                vertexDynamicRanking = new HashMap<>();
+                dominatedVertices = dominates(vertexSet);
+
+                for (int vertex : vertices) {
+                    Set<Integer> dominatedVerticesByVertex = new HashSet<>(Set.of(vertex));
+                    dominatedVerticesByVertex.removeAll(dominatedVertices);
+                    int numberOfDominatedVertices = dominatedVerticesByVertex.size();
+
+                    if (vertexDynamicRanking.containsKey(numberOfDominatedVertices)) {
+                        vertexDynamicRanking.get(numberOfDominatedVertices).add(vertex);
+                    } else {
+                        List<Integer> verticesWithSameRanking = new ArrayList<>();
+                        verticesWithSameRanking.add(vertex);
+                        vertexDynamicRanking.put(numberOfDominatedVertices, verticesWithSameRanking);
+                    }
+                }
+
+                while (bestVertex == -1) {
+                    for (int degree : vertexDynamicRanking.keySet()) {
+                        List<Integer> verticesWithSameRanking = vertexDynamicRanking.get(degree);
+                        Collections.shuffle(verticesWithSameRanking);
+                        for (int vertex : verticesWithSameRanking) {
+                            if (!dominatedVertices.contains(vertex)) {
+                                bestVertex = vertex;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
         }
         return bestVertex;
     }
@@ -164,7 +264,7 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_20_20_1.txt", Type.SOURCE);
+        Graph graph = new Graph("random/rnd_10_20_1.txt", Type.SOURCE, Mode.D);
 
         Set<Integer> dominatingSet = new HashSet<>();
         dominatingSet.add(0);
@@ -173,6 +273,6 @@ public class Graph {
         dominatingSet.add(4);
         dominatingSet.add(9);
 
-        System.out.println(graph.getNextBestVertexFast(dominatingSet));
+        System.out.println(graph.getNextVertex(dominatingSet));
     }
 }

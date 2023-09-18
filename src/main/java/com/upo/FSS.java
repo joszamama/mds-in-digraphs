@@ -1,51 +1,44 @@
 package com.upo;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import com.upo.utils.Type;
+import com.upo.utils.enums.Mode;
+import com.upo.utils.enums.Type;
 
 public class FSS {
-    
+
     private Graph graph;
-    private Set<Integer> initialSolution = new HashSet<>();
-    private Set<Integer> bestSolution = new HashSet<>();
-    private long time = 0;
 
     public FSS(Graph graph) {
         this.graph = graph;
     }
 
-    public Set<Integer> getInitialSolution() {
-        return initialSolution;
-    }
+    public List<Set<Integer>> computeInitialSolution(int numOfSolutions) {
+        List<Set<Integer>> solutions = new ArrayList<>();
 
-    public Set<Integer> getBestSolution() {
-        return bestSolution;
-    }
-
-    public long getTime() {
-        return time / 1000;
-    }
-
-    public void computeInitialSolution() {
-        long startTime = System.currentTimeMillis();
+        Set<Integer> initialSolution = new HashSet<>();
         initialSolution.addAll(graph.getMandatoryVertices());
-        while (!graph.isDominatingSet(initialSolution)) {
-            initialSolution.add(graph.getNextBestVertexFast(initialSolution));
+
+        for (int i = 0; i < numOfSolutions; i++) {
+            Set<Integer> solution = new HashSet<>(Set.copyOf(initialSolution));
+            while (!graph.isDominatingSet(solution)) {
+                solution.add(graph.getNextVertex(solution));
+            }
+            solution = graph.removeRedundantVertices(solution);
+            solutions.add(solution);
         }
-        initialSolution = graph.removeRedundantVertices(initialSolution);
-        long endTime = System.currentTimeMillis();
-        time = endTime - startTime;
+
+        return solutions;
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_5000_20_1.txt", Type.SINK);
+        Graph graph = new Graph("random/rnd_500_50_1.txt", Type.SOURCE, Mode.RANDOM);
 
         FSS fss = new FSS(graph);
-        fss.computeInitialSolution();
 
-        System.out.println(fss.getInitialSolution());
-        System.out.println(fss.getTime());
+        System.out.println(fss.computeInitialSolution(5));
     }
 }
