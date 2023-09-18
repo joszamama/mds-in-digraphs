@@ -12,33 +12,40 @@ public class FSS {
 
     private Graph graph;
 
-    public FSS(Graph graph) {
+    private Integer numOfInitialSolutions;
+    private Double alpha;
+
+    public FSS(Graph graph, Integer numOfInitialSolutions, Double alpha) {
         this.graph = graph;
+        this.numOfInitialSolutions = numOfInitialSolutions;
+        this.alpha = alpha;
     }
 
-    public List<Set<Integer>> computeInitialSolution(int numOfSolutions) {
+    public List<Set<Integer>> computeInitialSolution() {
         List<Set<Integer>> solutions = new ArrayList<>();
 
         Set<Integer> initialSolution = new HashSet<>();
         initialSolution.addAll(graph.getMandatoryVertices());
 
-        for (int i = 0; i < numOfSolutions; i++) {
+        for (int i = 0; i < numOfInitialSolutions; i++) {
             Set<Integer> solution = new HashSet<>(Set.copyOf(initialSolution));
             while (!graph.isDominatingSet(solution)) {
-                solution.add(graph.getNextVertex(solution));
+                solution.add(graph.getNextVertex(solution, alpha));
             }
             solution = graph.removeRedundantVertices(solution);
             solutions.add(solution);
         }
 
+        solutions.sort((s1, s2) -> s1.size() - s2.size());
+
         return solutions;
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_500_50_1.txt", Type.SOURCE, Mode.RANDOM);
+        Graph graph = new Graph("random/rnd_5000_20_1.txt", Type.SOURCE, Mode.A);
 
-        FSS fss = new FSS(graph);
+        FSS fss = new FSS(graph, 200, 0.3);
 
-        System.out.println(fss.computeInitialSolution(5));
+        System.out.println(fss.computeInitialSolution());
     }
 }
