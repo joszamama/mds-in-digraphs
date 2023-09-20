@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.upo.utils.MatrixReader;
-import com.upo.utils.enums.GreedyFunction;
+import com.upo.utils.enums.VertexFunction;
 import com.upo.utils.enums.Compute;
 
 public class Graph {
@@ -21,9 +21,9 @@ public class Graph {
     private List<Integer> vertexRanking = new ArrayList<>();
 
     private Compute type;
-    private GreedyFunction mode;
+    private VertexFunction mode;
 
-    public Graph(String filename, Compute type, GreedyFunction mode) {
+    public Graph(String filename, Compute type, VertexFunction mode) {
         this.type = type;
         this.mode = mode;
 
@@ -102,13 +102,10 @@ public class Graph {
     public Integer getNextVertex(Set<Integer> vertexSet, Double alpha) {
         Integer selectedVertex = -1;
         switch (mode) {
-            case F1: {
+            case GF2: {
                 List<Integer> ranking = new ArrayList<>(this.vertexRanking);
                 ranking.removeAll(vertexSet);
 
-                if (ranking.size() == 0) {
-                    System.out.println("No more vertices to add");
-                }
                 int threshold = (int) Math.ceil(getEdges(ranking.get(0)).get(1).size()
                         - (alpha * (getEdges(ranking.get(0)).get(1).size()
                                 - getEdges(ranking.get(ranking.size() - 1)).get(1).size())));
@@ -122,7 +119,7 @@ public class Graph {
                 selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
             }
                 break;
-            case F2: {
+            case GF1: {
                 List<Integer> ranking = new ArrayList<>(this.vertexRanking);
                 ranking.removeAll(vertexSet);
                 ranking.removeAll(dominates(vertexSet));
@@ -140,7 +137,7 @@ public class Graph {
                 selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
             }
                 break;
-            case F3: {
+            case GF4: {
                 Map<Integer, List<Integer>> vertexDynamicRanking = new HashMap<>();
 
                 for (int vertex : vertices) {
@@ -169,7 +166,7 @@ public class Graph {
                 selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
             }
                 break;
-            case F4: {
+            case GF3: {
                 Map<Integer, List<Integer>> vertexDynamicRanking = new HashMap<>();
 
                 for (int vertex : vertices) {
@@ -239,7 +236,7 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_50_20_1.txt", Compute.SOURCE, GreedyFunction.F1);
+        Graph graph = new Graph("random/rnd_50_20_1.txt", Compute.SOURCE, VertexFunction.GF1);
 
         Set<Integer> dominatingSet = new HashSet<>();
         dominatingSet.add(0);
