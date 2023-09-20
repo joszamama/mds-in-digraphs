@@ -1,5 +1,5 @@
 package com.upo.utils.enums;
 
-public enum Type {
+public enum Compute {
     SINK, SOURCE;
 }

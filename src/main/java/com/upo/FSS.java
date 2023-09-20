@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.upo.utils.enums.Mode;
-import com.upo.utils.enums.Type;
+import com.upo.utils.enums.GreedyFunction;
+import com.upo.utils.enums.Compute;
 
 public class FSS {
 
@@ -42,9 +42,9 @@ public class FSS {
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_5000_20_1.txt", Type.SOURCE, Mode.A);
+        Graph graph = new Graph("random/rnd_50_20_1.txt", Compute.SOURCE, GreedyFunction.F3);
 
-        FSS fss = new FSS(graph, 200, 0.3);
+        FSS fss = new FSS(graph, 5, 0.2);
 
         System.out.println(fss.computeInitialSolution());
     }
