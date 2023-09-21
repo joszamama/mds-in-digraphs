@@ -21,6 +21,8 @@ public class Grasp {
     private Double alpha;
     private VertexFunction mode;
 
+    private Long seconds = 0L;
+
     public Grasp(Graph graph, Integer numOfInitialSolutions, Boolean uniformAlpha, Double alpha,
             VertexFunction mode) {
         this.graph = graph;
@@ -35,6 +37,9 @@ public class Grasp {
         double alfa = 0.000000;
 
         Set<Integer> initialSolution = new HashSet<>();
+
+        Long startTime = System.currentTimeMillis();
+
         initialSolution.addAll(graph.getMandatoryVertices());
 
         for (int i = 0; i < numOfInitialSolutions; i++) {
@@ -53,8 +58,21 @@ public class Grasp {
             solutions.add(solution);
 
         }
-        solutions.sort((s1, s2) -> s1.size() - s2.size());
+        Long endTime = System.currentTimeMillis();
+        seconds = endTime - startTime;
+
+        solutions.sort((s2, s1) -> s1.size() - s2.size());
         return solutions;
+    }
+
+    public void returnSolution() {
+        List<Set<Integer>> solutions = computeInitialSolution();
+        System.out.println("\n========================================");
+        for (int i = 0; i < solutions.size(); i++) {
+            System.out.println("Solution " + i + ": " + solutions.get(i) + " with size: " + solutions.get(i).size());
+        }
+        System.out.println("Time: " + (double) seconds / 1000 + " s");
+        System.out.println("========================================\n");
     }
 
     public Integer getNextVertex(Set<Integer> vertexSet, Double alpha) {
@@ -186,13 +204,7 @@ public class Grasp {
     public static void main(String[] args) {
         Graph graph = new Graph("random/rnd_500_20_1.txt", Compute.SOURCE);
 
-        Grasp grasp = new Grasp(graph, 100, true, 0.5, VertexFunction.GF1);
-        List<Set<Integer>> solutions = grasp.computeInitialSolution();
-
-        System.out.println("\n========================================");
-        for (int i = 1; i < solutions.size(); i++) {
-            System.out.println("Solution " + i + ": " + solutions.get(i) + " with size: " + solutions.get(i).size());
-        }
-        System.out.println("========================================\n");
+        Grasp grasp = new Grasp(graph, 100, true, 0.5, VertexFunction.GF4);
+        grasp.returnSolution();
     }
 }
