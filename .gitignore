@@ -26,4 +26,6 @@ replay_pid*
 .vscode
 target/
 
+.DS_Store
+
 /src/main/resources/graphs/*

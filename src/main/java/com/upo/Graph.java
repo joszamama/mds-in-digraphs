@@ -2,14 +2,11 @@ package com.upo;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.upo.utils.MatrixReader;
-import com.upo.utils.enums.VertexFunction;
 import com.upo.utils.enums.Compute;
 
 public class Graph {
@@ -17,15 +14,12 @@ public class Graph {
     private Set<Integer> vertices = new HashSet<>();
     private List<List<Set<Integer>>> edges = new ArrayList<>();
     private Set<Integer> mandatoryVertices = new HashSet<>();
-
     private List<Integer> vertexRanking = new ArrayList<>();
 
     private Compute type;
-    private VertexFunction mode;
 
-    public Graph(String filename, Compute type, VertexFunction mode) {
+    public Graph(String filename, Compute type) {
         this.type = type;
-        this.mode = mode;
 
         List<Integer>[] adjacencyList = MatrixReader.matrixToList(MatrixReader.readGraph(filename));
 
@@ -95,111 +89,8 @@ public class Graph {
         return mandatoryVertices;
     }
 
-    public Integer getRandomVertex() {
-        return (int) (Math.random() * vertices.size());
-    }
-
-    public Integer getNextVertex(Set<Integer> vertexSet, Double alpha) {
-        Integer selectedVertex = -1;
-        switch (mode) {
-            case GF2: {
-                List<Integer> ranking = new ArrayList<>(this.vertexRanking);
-                ranking.removeAll(vertexSet);
-
-                int threshold = (int) Math.ceil(getEdges(ranking.get(0)).get(1).size()
-                        - (alpha * (getEdges(ranking.get(0)).get(1).size()
-                                - getEdges(ranking.get(ranking.size() - 1)).get(1).size())));
-
-                List<Integer> candidates = new ArrayList<>();
-                for (int i = 0; i < ranking.size(); i++) {
-                    if (getEdges(ranking.get(i)).get(1).size() >= threshold) {
-                        candidates.add(ranking.get(i));
-                    }
-                }
-                selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
-            }
-                break;
-            case GF1: {
-                List<Integer> ranking = new ArrayList<>(this.vertexRanking);
-                ranking.removeAll(vertexSet);
-                ranking.removeAll(dominates(vertexSet));
-
-                int threshold = (int) Math.ceil(getEdges(ranking.get(0)).get(1).size()
-                        - (alpha * (getEdges(ranking.get(0)).get(1).size()
-                                - getEdges(ranking.get(ranking.size() - 1)).get(1).size())));
-
-                List<Integer> candidates = new ArrayList<>();
-                for (int i = 0; i < ranking.size(); i++) {
-                    if (getEdges(ranking.get(i)).get(1).size() >= threshold) {
-                        candidates.add(ranking.get(i));
-                    }
-                }
-                selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
-            }
-                break;
-            case GF4: {
-                Map<Integer, List<Integer>> vertexDynamicRanking = new HashMap<>();
-
-                for (int vertex : vertices) {
-                    Set<Integer> dominatedVerticesByVertex = new HashSet<>(Set.of(vertex));
-                    dominatedVerticesByVertex.removeAll(vertexSet);
-                    int numberOfDominatedVertices = dominatedVerticesByVertex.size();
-
-                    if (vertexDynamicRanking.containsKey(numberOfDominatedVertices)) {
-                        vertexDynamicRanking.get(numberOfDominatedVertices).add(vertex);
-                    } else {
-                        List<Integer> verticesWithSameRanking = new ArrayList<>();
-                        verticesWithSameRanking.add(vertex);
-                        vertexDynamicRanking.put(numberOfDominatedVertices, verticesWithSameRanking);
-                    }
-                }
-                int threshold = (int) Math.ceil(Collections.max(vertexDynamicRanking.keySet())
-                        - (alpha * (Collections.max(vertexDynamicRanking.keySet())
-                                - Collections.min(vertexDynamicRanking.keySet()))));
-
-                List<Integer> candidates = new ArrayList<>();
-                for (int i = 0; i < vertexDynamicRanking.get(threshold).size(); i++) {
-                    if (getEdges(vertexDynamicRanking.get(threshold).get(i)).get(1).size() >= threshold) {
-                        candidates.add(vertexDynamicRanking.get(threshold).get(i));
-                    }
-                }
-                selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
-            }
-                break;
-            case GF3: {
-                Map<Integer, List<Integer>> vertexDynamicRanking = new HashMap<>();
-
-                for (int vertex : vertices) {
-                    Set<Integer> dominatedVerticesByVertex = new HashSet<>(Set.of(vertex));
-                    dominatedVerticesByVertex.removeAll(vertexSet);
-                    dominatedVerticesByVertex.removeAll(dominates(vertexSet));
-                    int numberOfDominatedVertices = dominatedVerticesByVertex.size();
-
-                    if (vertexDynamicRanking.containsKey(numberOfDominatedVertices)) {
-                        vertexDynamicRanking.get(numberOfDominatedVertices).add(vertex);
-                    } else {
-                        List<Integer> verticesWithSameRanking = new ArrayList<>();
-                        verticesWithSameRanking.add(vertex);
-                        vertexDynamicRanking.put(numberOfDominatedVertices, verticesWithSameRanking);
-                    }
-                }
-                int threshold = (int) Math.ceil(Collections.max(vertexDynamicRanking.keySet())
-                        - (alpha * (Collections.max(vertexDynamicRanking.keySet())
-                                - Collections.min(vertexDynamicRanking.keySet()))));
-
-                List<Integer> candidates = new ArrayList<>();
-                for (int i = 0; i < vertexDynamicRanking.get(threshold).size(); i++) {
-                    if (getEdges(vertexDynamicRanking.get(threshold).get(i)).get(1).size() >= threshold) {
-                        candidates.add(vertexDynamicRanking.get(threshold).get(i));
-                    }
-                }
-                selectedVertex = candidates.get((int) (Math.random() * candidates.size()));
-            }
-                break;
-            default:
-                break;
-        }
-        return selectedVertex;
+    public Compute getType() {
+        return type;
     }
 
     public Set<Integer> dominates(Set<Integer> dominatingSet) {
@@ -223,20 +114,8 @@ public class Graph {
         return dominatedVertices.containsAll(vertices);
     }
 
-    public Set<Integer> removeRedundantVertices(Set<Integer> dominatingSet) {
-        List<Integer> checkingSet = new ArrayList<>(dominatingSet);
-        for (int i = 0; i < checkingSet.size(); i++) {
-            Set<Integer> newDominatingSet = new HashSet<>(dominatingSet);
-            newDominatingSet.remove(checkingSet.get(i));
-            if (isDominatingSet(newDominatingSet)) {
-                dominatingSet.remove(checkingSet.get(i));
-            }
-        }
-        return dominatingSet;
-    }
-
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_50_20_1.txt", Compute.SOURCE, VertexFunction.GF1);
+        Graph graph = new Graph("random/rnd_50_20_1.txt", Compute.SOURCE);
 
         Set<Integer> dominatingSet = new HashSet<>();
         dominatingSet.add(0);
@@ -245,6 +124,6 @@ public class Graph {
         dominatingSet.add(4);
         dominatingSet.add(9);
 
-        System.out.println(graph.getNextVertex(dominatingSet, 0.2));
+        System.out.println(graph.isDominatingSet(dominatingSet));
     }
 }
