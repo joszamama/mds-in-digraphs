@@ -78,10 +78,9 @@ public class FSS {
                 groupByFrequency.put(frequency.get(vertex), list);
             }
         }
-        System.out.println(groupByFrequency);
 
         Set<Integer> fixedSet = new HashSet<>();
-        int fixCount = (int) Math.ceil(5);
+        int fixCount = (int) Math.ceil(cutB * baseSolution.size());
         List<Integer> keys = new ArrayList<>(groupByFrequency.keySet());
         keys.sort((a, b) -> b.compareTo(a));
 
@@ -108,20 +107,40 @@ public class FSS {
         return fixedSet;
     }
 
+    public Set<Integer> computeSolution() {
+        int iteration = 0;
+        int stagnation = 0;
+        int staggedCounter = 1;
+        while (iteration < stoppingCriterion) {
+            if (stagnation > stagnationCriterion) {
+                staggedCounter++;
+                cutB = (1 - (1 / (Math.pow(2, staggedCounter))));
+                stagnation = 0;
+            }
+            slashSolutions(solutions);
+            Set<Integer> fixedSet = computeFixedSet();
+            Set<Integer> solution = regenerateSolution(fixedSet);
+            if (solution.size() < eliteSet.get(eliteSet.size() - 1).size()) {
+                stagnation = 0;
+            } else {
+                stagnation++;
+            }
+            solutions.add(fixedSet);
+            solutions.sort((a, b) -> a.size() - b.size());
+            iteration++;
+        }
+        return solutions.get(0);
+    }
+
     public static void main(String[] args) {
-        Graph graph = new Graph("random/rnd_500_20_1.txt", Compute.SOURCE);
+        Graph graph = new Graph("random/rnd_5000_20_1.txt", Compute.SOURCE);
         Grasp grasp = new Grasp(graph, 100, true, 0.5, VertexFunction.GF1);
 
         FSS fss = new FSS(graph, grasp, 1000, 100, 1.0, 0.1, 0.3, 0.1,
                 0.1);
 
-        fss.slashSolutions(fss.solutions);
-        Set<Integer> fixedSet = fss.computeFixedSet();
-        System.out.println(fixedSet);
-
-        // print solution and size
-        Set<Integer> solution = fss.regenerateSolution(fixedSet);
-        System.out.println("Solution: " + solution + " size: " + solution.size());
+        Set<Integer> solution = fss.computeSolution();
+        System.out.println("Best found solution: " + solution + " with size: " + solution.size());
     }
 
 }
